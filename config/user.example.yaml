@@ -1,0 +1,36 @@
+# Copy to config/user.yaml and edit. This file has no secrets in it -
+# credentials/tokens live in .env and the paths it points to.
+
+name: Julius
+
+location:
+  city: West Lafayette, IN
+  # Optional: set lat/lon directly to skip geocoding.
+  # lat: 40.4237
+  # lon: -86.9212
+
+# Your day, used to compute free/downtime slots from your calendar.
+wake_time: "07:00"
+sleep_time: "23:00"
+
+# Things Jarvis can suggest for downtime (gym session, reading, a walk, etc.)
+interests:
+  - gym workout
+  - reading
+  - a short walk outside
+  - side project / coding
+  - catching up with friends
+
+# Email accounts to pull from and triage. `label` is just how they show up
+# in the briefing; `provider` is "gmail" or "outlook".
+email_accounts:
+  - label: personal
+    provider: gmail
+  - label: purdue
+    provider: outlook
+
+# How many recent/unread emails to pull per account.
+max_emails_per_account: 20
+
+# Minimum length (minutes) for a calendar gap to count as "downtime".
+min_downtime_minutes: 30

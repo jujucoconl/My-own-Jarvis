@@ -1,0 +1,85 @@
+"""Shared data types passed between Jarvis's modules."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import datetime
+
+
+@dataclass
+class WeatherInfo:
+    condition: str  # short description, e.g. "light rain"
+    temp_now_c: float
+    temp_high_c: float
+    temp_low_c: float
+    feels_like_c: float
+    precipitation_probability: int  # 0-100
+    wind_kph: float
+    is_daytime: bool = True
+
+
+@dataclass
+class OutfitSuggestion:
+    summary: str  # one-line takeaway, e.g. "Light jacket + umbrella"
+    details: list[str] = field(default_factory=list)
+
+
+@dataclass
+class CalendarEvent:
+    title: str
+    start: datetime
+    end: datetime
+    location: str | None = None
+    all_day: bool = False
+
+
+@dataclass
+class FreeSlot:
+    start: datetime
+    end: datetime
+
+    @property
+    def minutes(self) -> int:
+        return int((self.end - self.start).total_seconds() // 60)
+
+
+@dataclass
+class DowntimeSuggestion:
+    slot: FreeSlot
+    suggestion: str
+
+
+@dataclass
+class Email:
+    account_label: str
+    provider: str  # "gmail" | "outlook"
+    message_id: str
+    sender_name: str
+    sender_email: str
+    subject: str
+    snippet: str
+    received_at: datetime
+    is_unread: bool
+    link: str | None = None
+    body: str = ""
+
+
+@dataclass
+class EmailTriage:
+    email: Email
+    importance: str  # "high" | "medium" | "low"
+    reason: str
+    suggested_action: str
+    draft_reply: str | None = None
+
+
+@dataclass
+class Briefing:
+    generated_at: datetime
+    weather: WeatherInfo | None
+    outfit: OutfitSuggestion | None
+    events_today: list[CalendarEvent] = field(default_factory=list)
+    downtime: list[DowntimeSuggestion] = field(default_factory=list)
+    important_emails: list[EmailTriage] = field(default_factory=list)
+    other_emails: list[EmailTriage] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)

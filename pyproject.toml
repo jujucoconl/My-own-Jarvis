@@ -1,0 +1,29 @@
+[project]
+name = "jarvis"
+version = "0.1.0"
+description = "A personal morning-briefing assistant: weather + outfit, multi-account email triage, and calendar-aware downtime suggestions."
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+    "PyYAML>=6.0",
+    "rich>=13.7",
+    "anthropic>=0.40",
+    "google-api-python-client>=2.140",
+    "google-auth-httplib2>=0.2",
+    "google-auth-oauthlib>=1.2",
+    "msal>=1.28",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+jarvis = "jarvis.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
