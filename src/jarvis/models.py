@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 
 
 @dataclass
@@ -99,6 +99,34 @@ class EmailTriage:
 
 
 @dataclass
+class Task:
+    task_id: str
+    title: str
+    course: str  # optional context, e.g. "ME 270" - blank if not given
+    due_at: datetime
+    notes: str
+    priority: str  # low | medium | high
+    completed: bool
+    calendar_event_id: str | None  # Google Calendar event this deadline is mirrored to
+    created_at: datetime
+
+
+@dataclass
+class DayPlan:
+    date: date
+    events: list[CalendarEvent] = field(default_factory=list)
+    tasks_due: list[Task] = field(default_factory=list)
+
+
+@dataclass
+class WeeklyLookahead:
+    generated_at: datetime
+    days: list[DayPlan] = field(default_factory=list)
+    summary: str | None = None
+    errors: list[str] = field(default_factory=list)
+
+
+@dataclass
 class Briefing:
     generated_at: datetime
     weather: WeatherInfo | None
@@ -107,4 +135,5 @@ class Briefing:
     downtime: list[DowntimeSuggestion] = field(default_factory=list)
     important_emails: list[EmailTriage] = field(default_factory=list)
     other_emails: list[EmailTriage] = field(default_factory=list)
+    upcoming_tasks: list[Task] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)

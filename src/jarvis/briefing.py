@@ -6,11 +6,16 @@ from datetime import datetime, time
 
 from jarvis import downtime as downtime_mod
 from jarvis import email_gmail, email_outlook, outfit, wardrobe as wardrobe_mod
+from jarvis import tasks as tasks_mod
 from jarvis import weather as weather_mod
 from jarvis.calendar_google import get_google_credentials, get_todays_events
 from jarvis.config import AppConfig
 from jarvis.importance import triage_emails
 from jarvis.models import Briefing, Email
+
+# How many days ahead the daily brief peeks for a "coming up" nudge - the
+# fuller picture lives in `jarvis week` (7 days).
+UPCOMING_TASK_WINDOW_DAYS = 3
 
 
 def _parse_hhmm(value: str) -> time:
@@ -115,5 +120,10 @@ def build_briefing(config: AppConfig) -> Briefing:
         triaged = triage_emails(all_emails, secrets.anthropic_api_key, secrets.anthropic_model)
         briefing.important_emails = [t for t in triaged if t.importance == "high"]
         briefing.other_emails = [t for t in triaged if t.importance != "high"]
+
+    try:
+        briefing.upcoming_tasks = tasks_mod.upcoming_tasks(within_days=UPCOMING_TASK_WINDOW_DAYS)
+    except Exception as exc:  # noqa: BLE001
+        briefing.errors.append(f"Tasks: {exc}")
 
     return briefing

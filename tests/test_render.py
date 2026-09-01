@@ -8,6 +8,7 @@ from jarvis.models import (
     EmailTriage,
     FreeSlot,
     OutfitSuggestion,
+    Task,
     WeatherInfo,
 )
 from jarvis.render import render_markdown
@@ -47,6 +48,18 @@ def test_render_includes_all_sections():
         draft_reply="Thanks for the update, I'll plan accordingly.",
     )
 
+    task = Task(
+        task_id="1",
+        title="Lab report",
+        course="ME 270",
+        due_at=datetime(2026, 9, 2, 23, 59),
+        notes="",
+        priority="high",
+        completed=False,
+        calendar_event_id="evt1",
+        created_at=datetime(2026, 9, 1),
+    )
+
     briefing = Briefing(
         generated_at=datetime(2026, 9, 1, 7, 0),
         weather=weather,
@@ -55,6 +68,7 @@ def test_render_includes_all_sections():
         downtime=[downtime],
         important_emails=[triage],
         other_emails=[],
+        upcoming_tasks=[task],
         errors=["Outlook: not configured"],
     )
 
@@ -66,4 +80,6 @@ def test_render_includes_all_sections():
     assert "workout" in text
     assert "Assignment deadline moved" in text
     assert "Draft reply" in text
+    assert "Deadlines coming up" in text
+    assert "Lab report" in text
     assert "Outlook: not configured" in text

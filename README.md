@@ -9,8 +9,14 @@ A personal morning-briefing assistant. Run `jarvis brief` and get, in one shot:
 - **Downtime suggestions** - free gaps between events, with an AI (or heuristic) suggestion
   for each based on the weather, who you are, and what's happening right before/after the gap.
 - **Email triage** - across multiple accounts (Gmail + Outlook), flags what's actually important, explains why, suggests a next step, and drafts a reply for anything that needs one.
+- **Deadlines coming up** - anything you're tracking with `jarvis task` due in the next few days
+  (see [Deadlines & the week ahead](#deadlines--the-week-ahead) below).
 
 Every integration fails independently and gracefully - if Outlook isn't configured, or Claude's API is unreachable, the rest of the briefing still runs and the gap is called out at the bottom under "Notes".
+
+It can also run itself: `jarvis schedule install` sets up a real weekday-morning cron
+job (or Task Scheduler entry on Windows) so you stop having to remember to run it - see
+[Running it every morning](#running-it-every-morning).
 
 ## How it's built
 
@@ -19,15 +25,18 @@ src/jarvis/
   weather.py          Open-Meteo (no API key needed) + geocoding
   outfit.py            rule-based weather-only fallback + wardrobe-aware outfit picker
   wardrobe.py            photo -> tagged item (Claude vision), style profile, gap-finder
-  calendar_google.py       Google Calendar (OAuth) -> today's events
+  calendar_google.py       Google Calendar (OAuth, read/write) -> events, +create/delete
   email_gmail.py             Gmail (OAuth) -> recent inbox messages, optional draft creation
   email_outlook.py             Outlook / Microsoft 365 (device-code login) -> recent inbox, optional draft creation
   importance.py                  Claude-based email triage (importance/reason/next step/draft), heuristic fallback
   downtime.py                      free-slot finder + Claude-based (or heuristic) activity suggestions
-  ai_json.py                         shared "pull JSON out of a Claude response" helper
-  briefing.py                          orchestrates everything into one Briefing object
-  render.py                              Briefing -> Markdown
-  cli.py                                  `jarvis brief` / `jarvis wardrobe ...` entrypoints
+  tasks.py                           deadlines you track, mirrored onto Google Calendar
+  week.py                              7-day look-ahead: calendar events + tracked deadlines
+  schedule.py                           installs `jarvis brief` as a cron / Task Scheduler job
+  ai_json.py                              shared "pull JSON out of a Claude response" helper
+  briefing.py                               orchestrates everything into one Briefing object
+  render.py                                   Briefing / WeeklyLookahead -> Markdown
+  cli.py                                        `jarvis brief` / `wardrobe` / `task` / `week` / `schedule`
 ```
 
 Claude (via the Anthropic API) is used for the genuinely "judgment" tasks - deciding what's
@@ -58,6 +67,11 @@ triage and canned downtime suggestions.
 2. Create an **OAuth client ID** of type "Desktop app" and download the JSON.
 3. Save it as `credentials.json` in the repo root (or point `GOOGLE_CREDENTIALS_PATH` at it).
 4. First run opens a browser for consent; after that a cached token (`.google_token.json`) is reused.
+
+Jarvis asks for full (not read-only) Calendar access, since `jarvis task add` creates a
+matching event for each deadline you track. If you set this up before that feature
+existed, delete `.google_token.json` once - Jarvis notices the cached token is missing
+the new scope and reruns the consent screen automatically on the next command.
 
 ### 3. Microsoft 365 / Outlook
 
@@ -106,13 +120,51 @@ generated from your clothes and your own `style.notes`), and flags it in the bri
 jacket on a rainy day, etc.) rather than nagging you every day. Run `jarvis wardrobe gaps`
 whenever you want the fuller "what should I actually buy" picture.
 
-### Running it every morning
+## Deadlines & the week ahead
 
-`jarvis brief` is a script, not a daemon - point cron (or Task Scheduler on Windows) at it:
+Track a deadline once and it shows up everywhere: today's brief (if it's coming up soon),
+`jarvis week`, and your actual Google Calendar.
+
+```bash
+jarvis task add "Lab report" --due 2026-09-05 --time 23:59 --course "ME 270" --priority high
+jarvis task add "Career fair" --due 2026-09-10 --no-calendar   # skip the calendar sync
+
+jarvis task list                # what's due in the next 7 days
+jarvis task list --all          # everything, including completed
+jarvis task done <task_id>
+jarvis task remove <task_id>    # also deletes the linked calendar event
+
+jarvis week                     # day-by-day look-ahead: events + deadlines, next 7 days
+jarvis week --output week.md
+```
+
+`jarvis task add` creates a matching all-day event on your Google Calendar titled
+`Due: <title>` by default (`--no-calendar` to skip that). `jarvis week` pulls that same
+week's calendar events plus everything you're tracking, and - with `ANTHROPIC_API_KEY`
+set - adds a short "here's what this week actually looks like" heads-up (busiest days,
+what needs starting soonest) on top of the plain day-by-day listing. `jarvis brief`
+surfaces anything due in the next 3 days so you don't have to open `jarvis week` daily.
+Deadlines live in `tasks/tasks.json` (gitignored, personal data, same pattern as `wardrobe/`).
+
+## Running it every morning
+
+`jarvis brief` is a script, not a daemon - `jarvis schedule` turns it into one:
+
+```bash
+jarvis schedule install                       # cron/Task Scheduler, weekdays at 06:45 by default
+jarvis schedule install --time 07:15           # different time
+jarvis schedule status                         # see what's currently installed
+jarvis schedule uninstall
+```
+
+This installs a real OS-level job (cron on Linux/macOS, Task Scheduler on Windows) that
+runs `jarvis brief --output briefings/<date>.md` in this repo's virtualenv - `jarvis
+schedule install` re-run later replaces the old entry rather than duplicating it. If you'd
+rather manage it by hand (or `crontab` isn't available), the equivalent line is:
 
 ```cron
 # 6:45am on weekdays
-45 6 * * 1-5 cd /path/to/My-own-Jarvis && .venv/bin/jarvis brief --output ~/briefings/$(date +\%F).md
+45 6 * * 1-5 cd /path/to/My-own-Jarvis && .venv/bin/jarvis brief --output briefings/$(date +\%F).md
 ```
 
 ## Tests
@@ -122,5 +174,5 @@ pytest
 ```
 
 Tests cover the pure logic (outfit rules, free-slot math, heuristic email triage,
-wardrobe storage + gap heuristics, Markdown rendering) - no live network/API calls,
-no credentials required.
+wardrobe storage + gap heuristics, task tracking, cron-line building, Markdown
+rendering) - no live network/API calls, no credentials required.

@@ -19,3 +19,6 @@ briefings/
 
 # wardrobe photos + derived data (personal)
 wardrobe/
+
+# tracked deadlines (personal)
+tasks/

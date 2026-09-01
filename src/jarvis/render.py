@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from jarvis.models import Briefing, EmailTriage
+from jarvis.models import Briefing, EmailTriage, WeeklyLookahead
 
 
 def _render_email(t: EmailTriage) -> list[str]:
@@ -53,6 +53,14 @@ def render_markdown(briefing: Briefing) -> str:
         lines.append("_No events found (or calendar unavailable)._")
     lines.append("")
 
+    if briefing.upcoming_tasks:
+        lines.append(f"## Deadlines coming up ({len(briefing.upcoming_tasks)})")
+        for t in briefing.upcoming_tasks:
+            course = f" ({t.course})" if t.course else ""
+            overdue = " - **overdue**" if t.due_at < briefing.generated_at else ""
+            lines.append(f"- {t.due_at.strftime('%a %m/%d %H:%M')}: **{t.title}**{course} [{t.priority}]{overdue}")
+        lines.append("")
+
     lines.append("## Downtime suggestions")
     if briefing.downtime:
         for d in briefing.downtime:
@@ -83,6 +91,34 @@ def render_markdown(briefing: Briefing) -> str:
     if briefing.errors:
         lines.append("## Notes")
         for err in briefing.errors:
+            lines.append(f"- {err}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def render_week(lookahead: WeeklyLookahead) -> str:
+    lines: list[str] = [f"# Week Ahead - {lookahead.generated_at.strftime('%B %d, %Y')}", ""]
+
+    if lookahead.summary:
+        lines.append(lookahead.summary)
+        lines.append("")
+
+    for day in lookahead.days:
+        lines.append(f"## {day.date.strftime('%A, %B %d')}")
+        if not day.events and not day.tasks_due:
+            lines.append("_Nothing scheduled._")
+        for e in day.events:
+            when = "All day" if e.all_day else f"{e.start.strftime('%H:%M')}-{e.end.strftime('%H:%M')}"
+            lines.append(f"- {when}: {e.title}")
+        for t in day.tasks_due:
+            course = f" ({t.course})" if t.course else ""
+            lines.append(f"- **Due: {t.title}{course}** [{t.priority}]")
+        lines.append("")
+
+    if lookahead.errors:
+        lines.append("## Notes")
+        for err in lookahead.errors:
             lines.append(f"- {err}")
         lines.append("")
 
