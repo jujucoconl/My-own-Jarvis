@@ -33,8 +33,12 @@ def render_markdown(briefing: Briefing) -> str:
             f"low {w.temp_low_c:.0f}C, {w.precipitation_probability}% chance of rain."
         )
         lines.append(f"**Wear:** {briefing.outfit.summary}")
+        for item in briefing.outfit.items:
+            lines.append(f"- {item.category}: {item.subtype} ({item.primary_color})")
         for d in briefing.outfit.details:
             lines.append(f"- {d}")
+        if briefing.outfit.missing_piece_note:
+            lines.append(f"- _Heads up: {briefing.outfit.missing_piece_note}_")
     else:
         lines.append("_Weather unavailable._")
     lines.append("")

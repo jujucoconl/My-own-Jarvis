@@ -35,6 +35,8 @@ class UserConfig:
     email_accounts: list[EmailAccountConfig]
     max_emails_per_account: int = 20
     min_downtime_minutes: int = 30
+    about_me: str = ""
+    style_notes: str = ""
 
 
 @dataclass
@@ -74,6 +76,8 @@ def _load_user_config(path: Path) -> UserConfig:
         for a in raw.get("email_accounts", []) or []
     ]
 
+    style_raw = raw.get("style", {}) or {}
+
     return UserConfig(
         name=raw.get("name", "there"),
         location=location,
@@ -83,6 +87,8 @@ def _load_user_config(path: Path) -> UserConfig:
         email_accounts=accounts,
         max_emails_per_account=int(raw.get("max_emails_per_account", 20)),
         min_downtime_minutes=int(raw.get("min_downtime_minutes", 30)),
+        about_me=raw.get("about_me", "") or "",
+        style_notes=style_raw.get("notes", "") or "",
     )
 
 

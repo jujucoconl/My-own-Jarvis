@@ -16,3 +16,6 @@ ms_token_cache.bin
 
 # output
 briefings/
+
+# wardrobe photos + derived data (personal)
+wardrobe/

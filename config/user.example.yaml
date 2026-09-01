@@ -13,6 +13,12 @@ location:
 wake_time: "07:00"
 sleep_time: "23:00"
 
+# Free text about who you are - used to make downtime suggestions actually fit you,
+# not just fill time. A sentence or two is plenty.
+about_me: >
+  ME student at Purdue (Class of 2028), Management minor. Enjoys the gym, side
+  projects, and hanging out with friends. Prefers active mornings, chill evenings.
+
 # Things Jarvis can suggest for downtime (gym session, reading, a walk, etc.)
 interests:
   - gym workout
@@ -20,6 +26,13 @@ interests:
   - a short walk outside
   - side project / coding
   - catching up with friends
+
+# Free text about your taste, used alongside your wardrobe's own style profile
+# (see `jarvis wardrobe style`) when picking outfits.
+style:
+  notes: >
+    Casual-minimalist, neutral colors (black, navy, olive, white). Avoid loud
+    patterns and slogans. Comfortable, not too tight.
 
 # Email accounts to pull from and triage. `label` is just how they show up
 # in the briefing; `provider` is "gmail" or "outlook".

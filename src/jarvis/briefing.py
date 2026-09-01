@@ -5,7 +5,8 @@ from __future__ import annotations
 from datetime import datetime, time
 
 from jarvis import downtime as downtime_mod
-from jarvis import email_gmail, email_outlook, outfit, weather as weather_mod
+from jarvis import email_gmail, email_outlook, outfit, wardrobe as wardrobe_mod
+from jarvis import weather as weather_mod
 from jarvis.calendar_google import get_google_credentials, get_todays_events
 from jarvis.config import AppConfig
 from jarvis.importance import triage_emails
@@ -41,7 +42,6 @@ def build_briefing(config: AppConfig) -> Briefing:
     try:
         weather_info = weather_mod.get_weather(user.location)
         briefing.weather = weather_info
-        briefing.outfit = outfit.suggest_outfit(weather_info)
     except Exception as exc:  # noqa: BLE001 - keep the rest of the briefing working
         briefing.errors.append(f"Weather: {exc}")
         weather_info = None
@@ -56,13 +56,26 @@ def build_briefing(config: AppConfig) -> Briefing:
     except Exception as exc:  # noqa: BLE001
         briefing.errors.append(f"Google Calendar: {exc}")
 
+    if weather_info:
+        try:
+            wardrobe_items = wardrobe_mod.load_wardrobe()
+            style_profile = wardrobe_mod.load_style_profile()
+            event_titles = [e.title for e in briefing.events_today]
+            briefing.outfit = outfit.choose_outfit(
+                weather_info, wardrobe_items, style_profile, user.style_notes, event_titles,
+                secrets.anthropic_api_key, secrets.anthropic_model,
+            )
+        except Exception as exc:  # noqa: BLE001
+            briefing.errors.append(f"Outfit: {exc}")
+
     if briefing.events_today or google_creds:
         free_slots = downtime_mod.find_free_slots(
             briefing.events_today, day_start, day_end, user.min_downtime_minutes
         )
         briefing.downtime = downtime_mod.suggest_downtime(
-            free_slots, weather_info, user.interests,
+            free_slots, weather_info, user.interests, user.about_me,
             secrets.anthropic_api_key, secrets.anthropic_model,
+            events_today=briefing.events_today,
         )
 
     all_emails: list[Email] = []

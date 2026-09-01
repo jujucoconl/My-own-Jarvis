@@ -19,9 +19,34 @@ class WeatherInfo:
 
 
 @dataclass
+class WardrobeItem:
+    item_id: str
+    image_path: str  # relative to the wardrobe/ directory
+    category: str  # top | bottom | outerwear | dress | shoes | accessory
+    subtype: str  # e.g. "flannel button-up"
+    primary_color: str
+    secondary_colors: list[str]
+    warmth: int  # 1 (very light) - 5 (heavy winter)
+    formality: str  # casual | smart_casual | formal | athletic
+    rain_ok: bool
+    style_tags: list[str]
+    description: str
+    added_at: datetime
+
+
+@dataclass
+class StyleProfile:
+    summary: str
+    generated_at: datetime
+    based_on_item_count: int
+
+
+@dataclass
 class OutfitSuggestion:
     summary: str  # one-line takeaway, e.g. "Light jacket + umbrella"
     details: list[str] = field(default_factory=list)
+    items: list[WardrobeItem] = field(default_factory=list)
+    missing_piece_note: str | None = None
 
 
 @dataclass

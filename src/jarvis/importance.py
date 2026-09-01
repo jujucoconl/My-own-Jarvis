@@ -7,11 +7,9 @@ just breaks because of a flaky request.
 
 from __future__ import annotations
 
-import json
-import re
-
 from anthropic import Anthropic
 
+from jarvis.ai_json import parse_json_array
 from jarvis.models import Email, EmailTriage
 
 _URGENT_WORDS = (
@@ -89,13 +87,6 @@ def _build_batch_prompt(emails: list[Email]) -> str:
     return "Emails:\n" + "\n".join(lines)
 
 
-def _parse_json_array(text: str) -> list[dict]:
-    match = re.search(r"\[.*\]", text, re.DOTALL)
-    if not match:
-        raise ValueError("No JSON array found in model response.")
-    return json.loads(match.group(0))
-
-
 def _triage_batch(
     client: Anthropic, model: str, emails: list[Email]
 ) -> list[EmailTriage]:
@@ -106,7 +97,7 @@ def _triage_batch(
         messages=[{"role": "user", "content": _build_batch_prompt(emails)}],
     )
     text = "".join(block.text for block in response.content if block.type == "text")
-    results = _parse_json_array(text)
+    results = parse_json_array(text)
 
     by_index = {int(r["index"]): r for r in results}
     triaged = []
